@@ -134,7 +134,7 @@ public class RLottieDrawable extends BitmapDrawable implements Animatable, Bitma
     private static ThreadLocal<byte[]> readBufferLocal = new ThreadLocal<>();
     private static ThreadLocal<byte[]> bufferLocal = new ThreadLocal<>();
 
-    private static final DispatchQueuePool loadFrameRunnableQueue = new DispatchQueuePool(4);
+    private static final DispatchQueuePool loadFrameRunnableQueue = new DispatchQueuePool("loadFrameRunnableQueue", 4);
     public static DispatchQueue lottieCacheGenerateQueue;
 
     File file;

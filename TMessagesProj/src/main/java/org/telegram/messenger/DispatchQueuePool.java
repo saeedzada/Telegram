@@ -17,7 +17,7 @@ public class DispatchQueuePool {
     private final Map<Runnable, DispatchQueue> postedRunnables = new HashMap<>();
     private final int maxCount;
     private int createdCount;
-    private final int guid;
+    private final String poolName;
     private int totalTasksCount;
     private boolean cleanupScheduled;
 
@@ -46,9 +46,9 @@ public class DispatchQueuePool {
         }
     };
 
-    public DispatchQueuePool(int count) {
+    public DispatchQueuePool(String poolName, int count) {
+        this.poolName = poolName;
         maxCount = count;
-        guid = Utilities.random.nextInt();
     }
 
     @UiThread
@@ -62,7 +62,7 @@ public class DispatchQueuePool {
         if (!busyQueues.isEmpty() && (totalTasksCount / 2 <= busyQueues.size() || queues.isEmpty() && createdCount >= maxCount)) {
             queue = busyQueues.remove(0);
         } else if (queues.isEmpty()) {
-            queue = new DispatchQueue("DispatchQueuePool" + guid + "_" + Utilities.random.nextInt());
+            queue = new DispatchQueue(poolName + "_" + Utilities.random.nextInt());
             queue.setPriority(Thread.MAX_PRIORITY);
             createdCount++;
         } else {

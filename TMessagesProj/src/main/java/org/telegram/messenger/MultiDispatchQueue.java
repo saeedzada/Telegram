@@ -1,13 +1,11 @@
 package org.telegram.messenger;
 
-public class MultiDispatchQueue extends Thread {
+public class MultiDispatchQueue {
 
     private final DispatchQueuePool dispatchQueuePool;
 
-    public MultiDispatchQueue(String threadName, int concurrencyLevel) {
-        super(threadName);
-
-        dispatchQueuePool = new DispatchQueuePool(concurrencyLevel);
+    public MultiDispatchQueue(String name, int concurrencyLevel) {
+        dispatchQueuePool = new DispatchQueuePool(name, concurrencyLevel);
     }
 
     public synchronized boolean postRunnable(Runnable runnable) {
