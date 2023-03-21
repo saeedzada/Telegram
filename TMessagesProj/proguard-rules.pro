@@ -105,3 +105,6 @@
 # Use -keep to explicitly keep any other classes shrinking would remove
 -dontoptimize
 -dontobfuscate
+
+# Product Science rule
+-keep class com.productscience.transformer.module.** { *; }

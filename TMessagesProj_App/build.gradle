@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: "com.productscience.transformer.plugin"
 
 repositories {
     mavenCentral()
@@ -175,7 +176,7 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion 21
         targetSdkVersion 31
         versionName APP_VERSION_NAME
         ndkVersion "21.4.7075529"

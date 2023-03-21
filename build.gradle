@@ -4,13 +4,25 @@ buildscript {
         mavenCentral()
         google()
         maven { url 'https://developer.huawei.com/repo/' }
+        maven { url "https://artifactory.productscience.app/releases" }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:7.0.3'
         classpath 'com.google.gms:google-services:4.3.10'
         classpath 'com.huawei.agconnect:agcp:1.6.0.300'
+
+        classpath "com.productscience.transformer:transformer-plugin:0.16.3"
+        classpath "com.productscience.transformer:transformer-instrumentation:0.16.3"
     }
 }
 repositories {
     google()
+}
+
+allprojects {
+    repositories {
+        maven {
+            url "https://artifactory.productscience.app/releases"
+        }
+    }
 }
