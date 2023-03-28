@@ -281,8 +281,8 @@ public class GroupCreateActivity extends BaseFragment implements NotificationCen
             allSpans.add(span);
             selectedContacts.put(span.getUid(), span);
 
-            editText.setHintVisible(false);
-            if (currentAnimation != null) {
+            editText.setHintVisible(false, TextUtils.isEmpty(editText.getText()));
+            if (currentAnimation != null && currentAnimation.isRunning()) {
                 currentAnimation.setupEndValues();
                 currentAnimation.cancel();
             }
@@ -327,7 +327,7 @@ public class GroupCreateActivity extends BaseFragment implements NotificationCen
                     animationStarted = false;
                     editText.setAllowDrawCursor(true);
                     if (allSpans.isEmpty()) {
-                        editText.setHintVisible(true);
+                        editText.setHintVisible(true, true);
                     }
                 }
             });
@@ -404,7 +404,11 @@ public class GroupCreateActivity extends BaseFragment implements NotificationCen
         allSpans.clear();
         selectedContacts.clear();
         currentDeletingSpan = null;
-        doneButtonVisible = chatType == ChatObject.CHAT_TYPE_CHANNEL;
+        if (chatType == ChatObject.CHAT_TYPE_CHANNEL) {
+            doneButtonVisible = true;
+        } else {
+            doneButtonVisible = !addToGroup;
+        }
 
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setAllowOverlayTitle(true);
@@ -727,9 +731,9 @@ public class GroupCreateActivity extends BaseFragment implements NotificationCen
                                 TLRPC.Chat chat = getMessagesController().getChat(channelId);
                                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
                                 if (ChatObject.canAddAdmins(chat)) {
-                                    builder.setTitle(LocaleController.getString("AppName", R.string.AppName));
+                                    builder.setTitle(LocaleController.getString("AddBotAdminAlert", R.string.AddBotAdminAlert));
                                     builder.setMessage(LocaleController.getString("AddBotAsAdmin", R.string.AddBotAsAdmin));
-                                    builder.setPositiveButton(LocaleController.getString("MakeAdmin", R.string.MakeAdmin), (dialogInterface, i) -> {
+                                    builder.setPositiveButton(LocaleController.getString("AddAsAdmin", R.string.AddAsAdmin), (dialogInterface, i) -> {
                                         delegate2.needAddBot(user);
                                         if (editText.length() > 0) {
                                             editText.setText(null);
@@ -810,7 +814,7 @@ public class GroupCreateActivity extends BaseFragment implements NotificationCen
         }
         frameLayout.addView(floatingButton);
         floatingButton.setOnClickListener(v -> onDonePressed(true));
-        if (chatType != ChatObject.CHAT_TYPE_CHANNEL) {
+        if (!doneButtonVisible) {
             floatingButton.setVisibility(View.INVISIBLE);
             floatingButton.setScaleX(0.0f);
             floatingButton.setScaleY(0.0f);
@@ -963,7 +967,7 @@ public class GroupCreateActivity extends BaseFragment implements NotificationCen
     }
 
     private boolean onDonePressed(boolean alert) {
-        if (selectedContacts.size() == 0 && chatType != ChatObject.CHAT_TYPE_CHANNEL) {
+        if (selectedContacts.size() == 0 && (chatType != ChatObject.CHAT_TYPE_CHANNEL && addToGroup)) {
             return false;
         }
         if (alert && addToGroup) {
@@ -1013,7 +1017,6 @@ public class GroupCreateActivity extends BaseFragment implements NotificationCen
                 linearLayout.addView(cells[0], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
                 cells[0].setOnClickListener(v -> cells[0].setChecked(!cells[0].isChecked(), true));
 
-                builder.setCustomViewOffset(12);
                 builder.setView(linearLayout);
             }
             builder.setPositiveButton(LocaleController.getString("Add", R.string.Add), (dialogInterface, i) -> onAddToGroupDone(cells[0] != null && cells[0].isChecked() ? 100 : 0));
@@ -1035,7 +1038,7 @@ public class GroupCreateActivity extends BaseFragment implements NotificationCen
                 args2.putBoolean("just_created_chat", true);
                 presentFragment(new ChatActivity(args2), true);
             } else {
-                if (!doneButtonVisible || selectedContacts.size() == 0) {
+                if (!doneButtonVisible) {
                     return false;
                 }
                 if (addToGroup) {
@@ -1092,7 +1095,7 @@ public class GroupCreateActivity extends BaseFragment implements NotificationCen
                 }
             }
         }
-        if (chatType != ChatObject.CHAT_TYPE_CHANNEL) {
+        if (chatType != ChatObject.CHAT_TYPE_CHANNEL && addToGroup) {
             if (doneButtonVisible && allSpans.isEmpty()) {
                 if (currentDoneButtonAnimation != null) {
                     currentDoneButtonAnimation.cancel();

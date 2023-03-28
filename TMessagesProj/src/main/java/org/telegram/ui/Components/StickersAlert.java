@@ -206,7 +206,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
         }
 
         @Override
-        public boolean needSend() {
+        public boolean needSend(int contentType) {
             return delegate != null;
         }
 
@@ -1252,7 +1252,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
 
         EditTextBoldCursor editText = new EditTextBoldCursor(context);
         editText.setBackground(null);
-        editText.setLineColors(Theme.getColor(Theme.key_dialogInputField), Theme.getColor(Theme.key_dialogInputFieldActivated), Theme.getColor(Theme.key_dialogTextRed2));
+        editText.setLineColors(Theme.getColor(Theme.key_dialogInputField), Theme.getColor(Theme.key_dialogInputFieldActivated), Theme.getColor(Theme.key_dialogTextRed));
         editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
         editText.setTextColor(getThemedColor(Theme.key_dialogTextBlack));
         editText.setMaxLines(1);
@@ -1662,7 +1662,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
             params.leftMargin = params.topMargin = params.rightMargin = params.bottomMargin = AndroidUtilities.dp(8);
             emptyParams.bottomMargin = gridParams.bottomMargin = shadowParams.bottomMargin = AndroidUtilities.dp(64);
         } else {
-            pickerBottomLayout.setBackground(Theme.createSelectorWithBackgroundDrawable(getThemedColor(Theme.key_dialogBackground), getThemedColor(Theme.key_listSelector)));
+            pickerBottomLayout.setBackground(Theme.createSelectorWithBackgroundDrawable(getThemedColor(Theme.key_dialogBackground), Theme.multAlpha(getThemedColor(Theme.key_dialogTextRed), .1f)));
             pickerBottomFrameLayout.setBackgroundColor(Color.TRANSPARENT);
             params.leftMargin = params.topMargin = params.rightMargin = params.bottomMargin = 0;
             emptyParams.bottomMargin = gridParams.bottomMargin = shadowParams.bottomMargin = AndroidUtilities.dp(48);
@@ -1855,7 +1855,13 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
                 stickersRowCount = 0;
                 for (int a = 0; a < stickerSetCovereds.size(); a++) {
                     TLRPC.StickerSetCovered pack = stickerSetCovereds.get(a);
-                    if (pack.covers.isEmpty() && pack.cover == null) {
+                    ArrayList<TLRPC.Document> documents;
+                    if (pack instanceof TLRPC.TL_stickerSetFullCovered) {
+                        documents = ((TLRPC.TL_stickerSetFullCovered) pack).documents;
+                    } else {
+                        documents = pack.covers;
+                    }
+                    if (documents == null || documents.isEmpty() && pack.cover == null) {
                         continue;
                     }
                     stickersRowCount += Math.ceil(stickerSetCovereds.size() / (float) stickersPerRow);
@@ -1863,10 +1869,10 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
                     cache.put(totalItems++, a);
                     int startRow = totalItems / stickersPerRow;
                     int count;
-                    if (!pack.covers.isEmpty()) {
-                        count = (int) Math.ceil(pack.covers.size() / (float) stickersPerRow);
-                        for (int b = 0; b < pack.covers.size(); b++) {
-                            cache.put(b + totalItems, pack.covers.get(b));
+                    if (!documents.isEmpty()) {
+                        count = (int) Math.ceil(documents.size() / (float) stickersPerRow);
+                        for (int b = 0; b < documents.size(); b++) {
+                            cache.put(b + totalItems, documents.get(b));
                         }
                     } else {
                         count = 1;

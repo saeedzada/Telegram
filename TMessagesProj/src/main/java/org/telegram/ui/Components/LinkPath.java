@@ -14,6 +14,7 @@ import android.os.Build;
 import android.text.Layout;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.LiteMode;
 
 public class LinkPath extends Path {
 
@@ -26,8 +27,10 @@ public class LinkPath extends Path {
     private int baselineShift;
     private int lineHeight;
 
+    public float centerX, centerY;
+
     public static int getRadius() {
-        return AndroidUtilities.dp(4);
+        return AndroidUtilities.dp(5);
     }
 
     private static CornerPathEffect roundedEffect;
@@ -133,7 +136,9 @@ public class LinkPath extends Path {
             } else if (baselineShift > 0) {
                 y += baselineShift;
             }
-            if (useRoundRect) {
+            centerX = (right + left) / 2;
+            centerY = (y2 + y) / 2;
+            if (useRoundRect && LiteMode.isEnabled(LiteMode.FLAGS_CHAT)) {
 //            final CharSequence text = currentLayout.getText();
 //            int startOffset = currentLayout.getOffsetForHorizontal(currentLine, left), endOffset = currentLayout.getOffsetForHorizontal(currentLine, right) + 1;
                 boolean startsWithWhitespace = false; // startOffset >= 0 && startOffset < text.length() && text.charAt(startOffset) == ' ';

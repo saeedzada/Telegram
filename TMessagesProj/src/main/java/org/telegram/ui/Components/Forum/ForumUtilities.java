@@ -228,7 +228,7 @@ public class ForumUtilities {
                 AnimatedEmojiSpan span;
                 sb.setSpan(span = new AnimatedEmojiSpan(forumTopic.icon_emoji_id, .95f, paint == null ? null : paint.getFontMetricsInt()), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 span.top = true;
-                span.cacheType = AnimatedEmojiDrawable.CACHE_TYPE_EMOJI_STATUS;
+                span.cacheType = AnimatedEmojiDrawable.CACHE_TYPE_ALERT_PREVIEW_STATIC;
             } else {
                 sb.append(" ");
                 Drawable drawable = ForumUtilities.createTopicDrawable(forumTopic);
@@ -295,6 +295,9 @@ public class ForumUtilities {
                 name = fromChat.title;
             }
 
+            if ((topicEdit.flags & 8) != 0) {
+                return AndroidUtilities.replaceCharSequence("%s", topicEdit.hidden ? LocaleController.getString(R.string.TopicHidden2) :  LocaleController.getString(R.string.TopicShown2), name);
+            }
             if ((topicEdit.flags & 4) != 0) {
                 CharSequence charSequence = AndroidUtilities.replaceCharSequence("%2$s", topicEdit.closed ? LocaleController.getString(R.string.TopicWasClosedAction) :  LocaleController.getString(R.string.TopicWasReopenedAction), ForumUtilities.getTopicSpannedName(topic, null));
                 return AndroidUtilities.replaceCharSequence("%1$s", charSequence, name);

@@ -298,15 +298,24 @@ public abstract class BaseFragment {
         }
     }
 
-    public void finishFragment(boolean animated) {
+    public void setFinishing(boolean finishing) {
+        this.finishing = finishing;
+    }
+
+    public boolean finishFragment(boolean animated) {
         if (isFinished || parentLayout == null) {
-            return;
+            return false;
         }
         finishing = true;
         parentLayout.closeLastFragment(animated);
+        return true;
     }
 
     public void removeSelfFromStack() {
+        removeSelfFromStack(false);
+    }
+
+    public void removeSelfFromStack(boolean immediate) {
         if (isFinished || parentLayout == null) {
             return;
         }
@@ -314,7 +323,11 @@ public abstract class BaseFragment {
             parentDialog.dismiss();
             return;
         }
-        parentLayout.removeFragmentFromStack(this);
+        parentLayout.removeFragmentFromStack(this, immediate);
+    }
+
+    public boolean allowFinishFragmentInsteadOfRemoveFromStack() {
+        return true;
     }
 
     protected boolean isFinishing() {
@@ -863,6 +876,15 @@ public abstract class BaseFragment {
     public void setPreviewDelegate(PreviewDelegate previewDelegate) {
         this.previewDelegate = previewDelegate;
     }
+
+    public void resetFragment() {
+        if (isFinished) {
+            clearViews();
+            isFinished = false;
+            finishing = false;
+        }
+    }
+
 
     public interface PreviewDelegate {
         void finishFragment();

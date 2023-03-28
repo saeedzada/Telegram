@@ -1538,7 +1538,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         selectedMessagesCountTextView = new NumberTextView(context);
         selectedMessagesCountTextView.setTextSize(18);
         selectedMessagesCountTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-        selectedMessagesCountTextView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText2));
+        selectedMessagesCountTextView.setTextColor(getThemedColor(Theme.key_actionBarActionModeDefaultIcon));
         actionModeLayout.addView(selectedMessagesCountTextView, LayoutHelper.createLinear(0, LayoutHelper.MATCH_PARENT, 1.0f, 18, 0, 0, 0));
         actionModeViews.add(selectedMessagesCountTextView);
 
@@ -2090,7 +2090,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     }
                 }
             });
-            mediaPages[a].listView.setOnItemClickListener((view, position) -> {
+            mediaPages[a].listView.setOnItemClickListener((view, position, x, y) -> {
                 if (mediaPage.selectedType == 7) {
                     if (view instanceof UserCell) {
                         TLRPC.ChatParticipant participant;
@@ -2137,7 +2137,12 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 } else if (mediaPage.selectedType == 5 && view instanceof ContextLinkCell) {
                     onItemClick(position, view, (MessageObject) ((ContextLinkCell) view).getParentObject(), 0, mediaPage.selectedType);
                 } else if (mediaPage.selectedType == 0 && view instanceof SharedPhotoVideoCell2) {
-                    MessageObject messageObject = ((SharedPhotoVideoCell2) view).getMessageObject();
+                    SharedPhotoVideoCell2 cell = (SharedPhotoVideoCell2) view;
+                    if (cell.canRevealSpoiler()) {
+                        cell.startRevealMedia(x, y);
+                        return;
+                    }
+                    MessageObject messageObject = cell.getMessageObject();
                     if (messageObject != null) {
                         onItemClick(position, view, messageObject, 0, mediaPage.selectedType);
                     }
@@ -2170,16 +2175,25 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     return false;
                 }
                 if (isActionModeShowed) {
-                    mediaPage.listView.getOnItemClickListener().onItemClick(view, position);
+                    RecyclerListView.OnItemClickListener onItemClickListener = mediaPage.listView.getOnItemClickListener();
+                    if (onItemClickListener != null) {
+                        onItemClickListener.onItemClick(view, position);
+                    }
                     return true;
                 }
                 if (mediaPage.selectedType == 7 && view instanceof UserCell) {
                     final TLRPC.ChatParticipant participant;
+                    int index = position;
                     if (!chatUsersAdapter.sortedUsers.isEmpty()) {
-                        participant = chatUsersAdapter.chatInfo.participants.participants.get(chatUsersAdapter.sortedUsers.get(position));
-                    } else {
-                        participant = chatUsersAdapter.chatInfo.participants.participants.get(position);
+                        if (position >= chatUsersAdapter.sortedUsers.size()) {
+                            return false;
+                        }
+                        index = chatUsersAdapter.sortedUsers.get(position);
                     }
+                    if (index < 0 || index >= chatUsersAdapter.chatInfo.participants.participants.size()) {
+                        return false;
+                    }
+                    participant = chatUsersAdapter.chatInfo.participants.participants.get(index);
                     return onMemberClick(participant, true);
                 } else if (mediaPage.selectedType == 1 && view instanceof SharedDocumentCell) {
                     return onItemLongClick(((SharedDocumentCell) view).getMessage(), view, 0);
@@ -3125,7 +3139,9 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             req.limit = 100;
             req.peer = MessagesController.getInstance(profileActivity.getCurrentAccount()).getInputPeer(dialog_id);
             int reqIndex = sharedMediaData[type].requestIndex;
-            int reqId = ConnectionsManager.getInstance(profileActivity.getCurrentAccount()).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+            int reqId = ConnectionsManager.getInstance(profileActivity.getCurrentAccount()).sendRequest(req, (response, error) ->
+                    AndroidUtilities.runOnUIThread(() ->
+                    NotificationCenter.getInstance(profileActivity.getCurrentAccount()).doOnIdle(() -> {
                 if (error != null) {
                     return;
                 }
@@ -3153,7 +3169,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     }
                 }
                 photoVideoAdapter.notifyDataSetChanged();
-            }));
+            })));
             ConnectionsManager.getInstance(profileActivity.getCurrentAccount()).bindRequestToGuid(reqId, profileActivity.getClassGuid());
         }
     }
@@ -3246,9 +3262,9 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             Bundle args = new Bundle();
             args.putBoolean("onlySelect", true);
             args.putBoolean("canSelectTopics", true);
-            args.putInt("dialogsType", 3);
+            args.putInt("dialogsType", DialogsActivity.DIALOGS_TYPE_FORWARD);
             DialogsActivity fragment = new DialogsActivity(args);
-            fragment.setDelegate((fragment1, dids, message, param) -> {
+            fragment.setDelegate((fragment1, dids, message, param, topicsFragment) -> {
                 ArrayList<MessageObject> fmessages = new ArrayList<>();
                 for (int a = 1; a >= 0; a--) {
                     ArrayList<Integer> ids = new ArrayList<>();
@@ -3300,7 +3316,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                             args1.putLong("chat_id", -did);
                         }
                         if (!profileActivity.getMessagesController().checkCanOpenChat(args1, fragment1)) {
-                            return;
+                            return true;
                         }
                     }
 
@@ -3311,6 +3327,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     fragment1.presentFragment(chatActivity, true);
                     chatActivity.showFieldPanelForForward(true, fmessages);
                 }
+                return true;
             });
             profileActivity.presentFragment(fragment);
         } else if (id == gotochat) {
@@ -3820,7 +3837,11 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                             photoVideoAdapter.notifyDataSetChanged();
                         }
                     } else {
-                        adapter.notifyDataSetChanged();
+                        try {
+                            adapter.notifyDataSetChanged();
+                        } catch (Throwable e) {
+
+                        }
                     }
                     if (sharedMediaData[type].messages.isEmpty() && !sharedMediaData[type].loading) {
                         if (listView != null) {
@@ -6185,6 +6206,9 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+            if (!(holder.itemView instanceof UserCell)) {
+                return;
+            }
             UserCell userCell = (UserCell) holder.itemView;
             TLRPC.ChatParticipant part;
             if (!sortedUsers.isEmpty()) {
