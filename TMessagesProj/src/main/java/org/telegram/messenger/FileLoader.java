@@ -801,13 +801,12 @@ public class FileLoader extends BaseController {
             public void didPreFinishLoading(FileLoadOperation operation, File finalFile) {
                 FileLoaderPriorityQueue queue = operation.getQueue();
                 fileLoaderQueue.postRunnable(() -> {
-                    FileLoadOperation currentOperation = loadOperationPaths.remove(fileName);
+                    FileLoadOperation currentOperation = loadOperationPaths.get(fileName);
                     if (currentOperation != null) {
                         currentOperation.preFinished = true;
                         queue.checkLoadingOperations();
                     }
                 });
-                checkDownloadQueue(operation.getQueue(), fileName);
             }
 
             @Override
@@ -833,7 +832,7 @@ public class FileLoader extends BaseController {
                     }
                 }
 
-                checkDownloadQueue(operation.getQueue(), fileName);
+                checkDownloadQueue(operation.getQueue(), fileName, 100);
             }
 
             @Override
@@ -986,11 +985,15 @@ public class FileLoader extends BaseController {
     }
 
     private void checkDownloadQueue(FileLoaderPriorityQueue queue, String fileName) {
+        checkDownloadQueue(queue, fileName, 0);
+    }
+
+    private void checkDownloadQueue(FileLoaderPriorityQueue queue, String fileName, long delay) {
         fileLoaderQueue.postRunnable(() -> {
             FileLoadOperation operation = loadOperationPaths.remove(fileName);
             queue.remove(operation);
             queue.checkLoadingOperations();
-        });
+        }, delay);
     }
 
     public void setDelegate(FileLoaderDelegate fileLoaderDelegate) {
